@@ -1,0 +1,1331 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Cucina">
+<title>Cucina Associazione</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+:root{
+  --bg:#F2F2F7;
+  --bg-card:#FFFFFF;
+  --bg2:#E8E8ED;
+  --sep:rgba(60,60,67,.25);
+  --sep2:rgba(60,60,67,.12);
+  --sep3:rgba(60,60,67,.08);
+  --tx:#000000;
+  --tx2:#3C3C43;
+  --tx3:#8E8E93;
+  --blue:#007AFF;
+  --green:#34C759;
+  --red:#FF3B30;
+  --orange:#FF9500;
+  --gray:#8E8E93;
+  --safe-b:env(safe-area-inset-bottom,0px);
+  --nav-h:49px;
+  --mono:ui-monospace,'SF Mono','Menlo',monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{background:#fff}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Inter','Helvetica Neue',sans-serif;
+  background:var(--bg);color:var(--tx);
+  min-height:100dvh;
+  padding-bottom:calc(var(--nav-h) + var(--safe-b) + 16px);
+  font-size:16px;line-height:1.4;
+  -webkit-text-size-adjust:100%;
+}
+
+/* ── TAB BAR ── */
+.tabbar{
+  position:fixed;bottom:0;left:0;right:0;
+  height:calc(var(--nav-h) + var(--safe-b));
+  background:rgba(242,242,247,.95);
+  -webkit-backdrop-filter:saturate(180%) blur(20px);
+  backdrop-filter:saturate(180%) blur(20px);
+  border-top:1px solid var(--sep2);
+  display:flex;align-items:flex-start;
+  padding:8px 0 0;
+  z-index:100;
+}
+.tab-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;
+  border:none;background:none;cursor:pointer;
+  color:var(--tx3);font-family:inherit;padding:0 2px;
+  min-height:44px;
+}
+.tab-btn.on{color:var(--blue)}
+.tab-icon{width:26px;height:26px;flex-shrink:0}
+.tab-lbl{font-size:10px;font-weight:500;letter-spacing:-.1px}
+
+/* ── SCREENS ── */
+.screen{display:none}
+.screen.on{display:block}
+
+/* ── PAGE HEADER ── */
+.page-hd{
+  padding:60px 20px 10px;
+  background:var(--bg);
+  position:sticky;top:0;z-index:50;
+  border-bottom:1px solid var(--sep2);
+  padding-bottom:12px;
+}
+.page-title{font-size:30px;font-weight:700;letter-spacing:-.5px;color:var(--tx)}
+.page-sub{font-size:13px;color:var(--tx3);margin-top:3px}
+.page-hd-row{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+
+/* ── LAYOUT ── */
+.content{padding:20px 0 8px}
+.section{margin:0 0 24px;padding:0 16px}
+.section-title{font-size:12px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;padding-left:16px}
+
+/* ── LIST GROUP (iOS style) ── */
+.list-group{background:var(--bg-card);border-radius:12px;overflow:hidden;border:.5px solid var(--sep2);box-shadow:0 1px 0 rgba(0,0,0,.04)}
+.list-row{display:flex;align-items:center;gap:12px;padding:13px 16px;min-height:48px;border-bottom:.5px solid var(--sep3)}
+.list-row:last-child{border-bottom:none}
+.list-row:active{background:var(--bg2)}
+.lr-label{flex:1;font-size:16px;color:var(--tx)}
+.lr-value{font-size:16px;color:var(--tx3)}
+.lr-mono{font-family:var(--mono);font-size:16px;font-weight:600}
+
+/* ── COPERTI ── */
+.cop-wrap{background:var(--bg-card);border-radius:12px;overflow:hidden;border:.5px solid var(--sep2);box-shadow:0 1px 0 rgba(0,0,0,.04)}
+.cop-fields{display:grid;grid-template-columns:repeat(3,1fr)}
+.cop-field{padding:16px 8px;text-align:center;border-right:.5px solid var(--sep3)}
+.cop-field:last-child{border-right:none}
+.cop-field-lbl{font-size:11px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+.cop-field input{
+  display:block;width:100%;max-width:80px;margin:0 auto;
+  font-size:30px;font-weight:700;font-family:var(--mono);
+  text-align:center;color:var(--tx);
+  background:var(--bg);border:1px solid var(--sep2);border-radius:10px;
+  padding:8px 4px;outline:none;
+  -webkit-appearance:none;appearance:none;
+}
+.cop-field input:focus{background:rgba(0,122,255,.07);color:var(--blue)}
+.cop-total{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-top:.5px solid var(--sep3)}
+.cop-total-lbl{font-size:15px;color:var(--tx2)}
+.cop-total-n{font-size:24px;font-weight:700;font-family:var(--mono);color:var(--blue)}
+
+/* ── ALT RAPIDO ── */
+.alt-item{display:flex;align-items:center;gap:10px;padding:11px 16px;border-bottom:.5px solid var(--sep3)}
+.alt-item:last-child{border:none}
+.alt-n-input{
+  width:56px;height:44px;font-size:22px;font-weight:700;font-family:var(--mono);
+  text-align:center;border:none;background:var(--bg2);border-radius:8px;
+  outline:none;color:var(--tx);-webkit-appearance:none;appearance:none;flex-shrink:0;
+}
+.alt-lbl-input{flex:1;font-size:16px;font-weight:500;border:none;background:none;color:var(--tx);outline:none;font-family:inherit}
+
+/* ── PORTATE ── */
+.portata-wrap{background:var(--bg-card);border-radius:12px;overflow:hidden;border:.5px solid var(--sep2);box-shadow:0 1px 0 rgba(0,0,0,.04)}
+.portata-hd{
+  display:flex;align-items:center;gap:10px;padding:14px 16px;
+  cursor:pointer;min-height:52px;user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+.portata-hd:active{background:var(--bg2)}
+.portata-name{flex:1;font-size:17px;font-weight:600;color:var(--tx)}
+.portata-chips{display:flex;gap:5px}
+.pchip{font-size:12px;font-weight:600;padding:3px 9px;border-radius:100px}
+.pchip-g{background:rgba(52,199,89,.12);color:#248A3D}
+.pchip-o{background:rgba(255,149,0,.12);color:#C93400}
+.portata-body{display:none;border-top:.5px solid var(--sep3)}
+.portata-body.op{display:block}
+.sec-label{font-size:11px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.07em;padding:10px 16px 6px;background:var(--bg2)}
+.sec-label.alt{color:var(--orange)}
+.ric-item{padding:12px 16px;border-top:.5px solid var(--sep3)}
+.ric-item:active{background:var(--bg2)}
+.ric-header{display:flex;align-items:flex-start;gap:8px}
+.ric-name{flex:1;font-size:16px;font-weight:600;color:var(--tx)}
+.ric-meta{font-size:13px;color:var(--tx3);margin-top:2px}
+.ric-actions{display:flex;gap:8px;flex-shrink:0}
+.empty-row{padding:12px 16px;font-size:15px;color:var(--tx3);border-top:.5px solid var(--sep3)}
+.portata-footer{padding:10px 16px;border-top:.5px solid var(--sep3);display:flex;gap:8px;background:var(--bg2)}
+
+/* ING INLINE TABLE (in ric-item) */
+.ing-mini{margin-top:8px;border:.5px solid var(--sep3);border-radius:8px;overflow:hidden}
+.ing-mini-row{display:flex;align-items:center;gap:0;border-bottom:.5px solid var(--sep3);font-size:13px}
+.ing-mini-row:last-child{border:none}
+.ing-mini-name{flex:1;padding:7px 10px;color:var(--tx)}
+.ing-mini-val{padding:7px 10px;font-family:var(--mono);color:var(--blue);font-weight:600;text-align:right;min-width:72px}
+.ing-mini-forn{padding:7px 10px;font-size:11px;font-weight:600;min-width:80px}
+
+/* PANE */
+.pane-toggle-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-top:.5px solid var(--sep3)}
+.toggle{width:51px;height:31px;border-radius:100px;border:none;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0}
+.toggle.on{background:var(--green)}.toggle.off{background:#E5E5EA}
+.toggle::after{content:'';position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 2px 6px rgba(0,0,0,.3)}
+.toggle.on::after{transform:translateX(20px)}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 20px;border-radius:10px;font-size:16px;font-weight:600;font-family:inherit;border:none;cursor:pointer;transition:opacity .15s;-webkit-tap-highlight-color:transparent;line-height:1}
+.btn:active{opacity:.7}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-secondary{background:var(--bg2);color:var(--blue)}
+.btn-danger{background:rgba(255,59,48,.1);color:var(--red)}
+.btn-am{background:rgba(255,149,0,.1);color:var(--orange)}
+.btn-sm{padding:7px 14px;font-size:14px;border-radius:8px}
+.btn-text{background:none;border:none;color:var(--blue);font-size:15px;font-weight:500;cursor:pointer;font-family:inherit;padding:6px 0;-webkit-tap-highlight-color:transparent}
+.btn-text-red{color:var(--red)}
+.btn-full{width:100%}
+
+/* ── SPESA ── */
+.chips{display:flex;gap:7px;overflow-x:auto;padding-bottom:4px;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;padding:6px 14px;border-radius:100px;border:.5px solid var(--sep);font-size:14px;font-weight:500;cursor:pointer;background:#fff;color:var(--tx2);font-family:inherit;white-space:nowrap}
+.chip.on{background:var(--blue);border-color:var(--blue);color:#fff}
+.forn-block{background:var(--bg-card);border-radius:12px;overflow:hidden;border:.5px solid var(--sep2);box-shadow:0 1px 0 rgba(0,0,0,.04);margin-bottom:12px}
+.forn-block-hd{padding:10px 16px;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;background:var(--bg2);border-bottom:.5px solid var(--sep3)}
+.spesa-row{display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:.5px solid var(--sep3)}
+.spesa-row:last-child{border:none}
+.s-check{width:24px;height:24px;border-radius:50%;border:1.5px solid #C7C7CC;background:#fff;flex-shrink:0;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.s-check.on{background:var(--blue);border-color:var(--blue)}
+.s-check.on::after{content:'';width:10px;height:8px;border-bottom:2px solid #fff;border-left:2px solid #fff;transform:rotate(-45deg) translate(1px,0);display:block}
+.s-name{flex:1;font-size:16px;font-weight:500}
+.s-name.done{color:var(--tx3);text-decoration:line-through}
+.s-qty-col{display:flex;flex-direction:column;align-items:flex-end;gap:4px}
+.s-qty{font-size:16px;font-weight:600;font-family:var(--mono);color:var(--blue)}
+.s-qty.base{color:var(--tx3)}
+.s-extra{display:flex;align-items:center;gap:4px}
+.s-extra input,.s-extra select{
+  font-size:13px;padding:5px 7px;
+  border:.5px solid var(--sep);border-radius:7px;
+  background:var(--bg2);color:var(--tx);
+  outline:none;-webkit-appearance:none;appearance:none;
+  font-family:inherit;
+}
+.s-extra input{width:58px;text-align:right;font-family:var(--mono)}
+.s-extra select{width:54px}
+.s-price input{
+  width:78px;padding:7px 9px;font-size:15px;
+  border:.5px solid var(--sep);border-radius:8px;
+  background:var(--bg2);color:var(--tx);
+  text-align:right;outline:none;-webkit-appearance:none;appearance:none;font-family:var(--mono);
+}
+.pane-banner{background:rgba(255,149,0,.08);border:.5px solid rgba(255,149,0,.3);border-radius:10px;padding:12px 16px;font-size:15px;font-weight:500;color:var(--orange);margin-bottom:12px}
+.total-card{background:var(--bg-card);border-radius:12px;border:.5px solid var(--sep2);padding:16px 18px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 1px 0 rgba(0,0,0,.04)}
+.total-label{font-size:15px;color:var(--tx2);font-weight:500}
+.total-n{font-size:26px;font-weight:700;font-family:var(--mono)}
+.total-sub{font-size:13px;color:var(--tx3);margin-top:2px}
+
+/* ── OSPITI ── */
+.ospite-item{border-bottom:.5px solid var(--sep3)}
+.ospite-item:last-child{border:none}
+.ospite-row{display:flex;align-items:center;gap:10px;padding:13px 16px}
+.ospite-name{flex:1;font-size:16px;font-weight:600}
+.ospite-tags{display:flex;flex-wrap:wrap;gap:5px;padding:0 16px 12px}
+.atag{font-size:12px;font-weight:600;padding:3px 9px;border-radius:100px}
+.a-cel{background:rgba(255,149,0,.1);color:#C93400}
+.a-lat{background:rgba(0,122,255,.1);color:#0060CC}
+.a-fru{background:rgba(255,59,48,.1);color:#C0392B}
+.a-veg{background:rgba(52,199,89,.1);color:#248A3D}
+.a-vgt{background:rgba(48,209,88,.1);color:#248A3D}
+.a-uov{background:rgba(255,149,0,.1);color:#C93400}
+.a-pes{background:rgba(0,122,255,.1);color:#0060CC}
+.a-cro{background:rgba(255,59,48,.1);color:#C0392B}
+.a-soi{background:rgba(88,86,214,.1);color:#5856D6}
+.a-alt{background:var(--bg2);color:var(--tx3)}
+.allsum{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px}
+.as-item{display:flex;align-items:center;gap:6px;background:var(--bg-card);border:.5px solid var(--sep2);border-radius:8px;padding:7px 11px}
+.as-n{font-size:18px;font-weight:700;font-family:var(--mono)}
+
+/* ── STORICO ── */
+.ev-item{display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:.5px solid var(--sep3);cursor:pointer}
+.ev-item:last-child{border:none}
+.ev-item:active{background:var(--bg)}
+.ev-date{font-size:13px;color:var(--tx3);font-family:var(--mono);white-space:nowrap}
+.ev-name{flex:1;font-size:16px;font-weight:600}
+.ev-badges{display:flex;gap:5px;flex-shrink:0}
+.badge{font-size:12px;font-weight:600;padding:3px 9px;border-radius:100px}
+.badge-blue{background:rgba(0,122,255,.1);color:var(--blue)}
+.badge-gray{background:var(--bg2);color:var(--tx3)}
+
+/* ── FORMS ── */
+.form-field{margin-bottom:14px}
+.form-label{display:block;font-size:12px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.form-input{
+  display:block;width:100%;padding:13px 14px;
+  font-size:17px;font-family:inherit;color:var(--tx);
+  background:var(--bg);border:1px solid var(--sep2);border-radius:10px;
+  outline:none;-webkit-appearance:none;appearance:none;
+}
+.form-input:focus{background:rgba(0,122,255,.07)}
+.form-row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.form-check{display:flex;align-items:center;gap:12px;padding:13px 14px;background:var(--bg2);border-radius:10px;cursor:pointer;margin-bottom:14px}
+.form-check input{width:22px;height:22px;accent-color:var(--blue);cursor:pointer;flex-shrink:0}
+.form-check-label{font-size:16px;font-weight:500}
+
+/* ── ING BUILDER (modal, mobile-optimised) ── */
+.ing-builder{margin-top:8px}
+.ing-card{background:var(--bg-card);border-radius:10px;padding:14px;margin-bottom:8px;position:relative;border:.5px solid var(--sep2)}
+.ing-card-hd{font-size:12px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+.ing-card .form-input{font-size:15px;padding:11px 12px;margin-bottom:8px}
+.ing-card .form-input:last-child{margin-bottom:0}
+.ing-row2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.ing-row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px}
+.ing-del{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--red);font-size:22px;cursor:pointer;padding:4px;line-height:1}
+
+/* ── MODAL ── */
+.modal-overlay{
+  position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,.35);
+  -webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);
+  display:none;align-items:flex-end;
+}
+.modal-overlay.on{display:flex}
+.modal-sheet{
+  background:var(--bg);border-radius:20px 20px 0 0;
+  width:100%;max-height:94dvh;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding-bottom:calc(24px + var(--safe-b));
+  animation:sup .28s cubic-bezier(.25,.46,.45,.94);
+}
+@keyframes sup{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.modal-handle{width:36px;height:4px;background:var(--sep);border-radius:2px;margin:12px auto 0}
+.modal-hd{position:sticky;top:0;background:var(--bg);z-index:1;display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:.5px solid var(--sep3)}
+.modal-title{font-size:17px;font-weight:700}
+.modal-close{background:none;border:none;color:var(--blue);font-size:17px;font-weight:500;cursor:pointer;font-family:inherit;padding:4px;min-height:44px;min-width:44px;display:flex;align-items:center;justify-content:flex-end}
+.modal-body{padding:18px 20px}
+.modal-footer{padding:14px 20px;border-top:.5px solid var(--sep3);display:flex;gap:10px}
+.modal-footer .btn{flex:1}
+.divider{height:.5px;background:var(--sep3);margin:16px 0}
+
+/* ── MISC ── */
+.empty{text-align:center;padding:44px 20px;color:var(--tx3);font-size:15px;line-height:1.6}
+.info-badge{display:inline-flex;align-items:center;font-size:11px;font-weight:700;padding:2px 8px;border-radius:100px}
+.ib-green{background:rgba(52,199,89,.1);color:#248A3D}
+.ib-gray{background:var(--bg2);color:var(--tx3)}
+.ib-orange{background:rgba(255,149,0,.1);color:#C93400}
+.ib-blue{background:rgba(0,122,255,.1);color:var(--blue)}
+</style>
+</head>
+<body>
+
+<!-- TAB BAR -->
+<nav class="tabbar">
+  <button class="tab-btn on" data-s="menu" onclick="goTo(this)">
+    <svg class="tab-icon" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="15" y="3" width="8" height="8" rx="1.5"/><rect x="3" y="15" width="8" height="8" rx="1.5"/><rect x="15" y="15" width="8" height="8" rx="1.5"/></svg>
+    <span class="tab-lbl">Menu</span>
+  </button>
+  <button class="tab-btn" data-s="ospiti" onclick="goTo(this)">
+    <svg class="tab-icon" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="10" cy="8" r="3.5"/><path d="M3 22c0-3.9 3.1-7 7-7s7 3.1 7 7"/><circle cx="20" cy="9" r="3"/><path d="M17.5 22c0-2.5 1.3-4.6 3-5.5"/></svg>
+    <span class="tab-lbl">Ospiti</span>
+  </button>
+  <button class="tab-btn" data-s="spesa" onclick="goTo(this)">
+    <svg class="tab-icon" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3 4 7v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V7l-3-4z"/><line x1="4" y1="7" x2="22" y2="7"/><path d="M17 11a4 4 0 0 1-8 0"/></svg>
+    <span class="tab-lbl">Spesa</span>
+  </button>
+  <button class="tab-btn" data-s="costi" onclick="goTo(this)">
+    <svg class="tab-icon" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.8"><line x1="13" y1="2" x2="13" y2="24"/><path d="M18 6h-8a3.5 3.5 0 0 0 0 7h6a3.5 3.5 0 0 1 0 7H7"/></svg>
+    <span class="tab-lbl">Costi</span>
+  </button>
+  <button class="tab-btn" data-s="storico" onclick="goTo(this)">
+    <svg class="tab-icon" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="13" cy="13" r="10"/><polyline points="13 7 13 13 17 15"/></svg>
+    <span class="tab-lbl">Archivio</span>
+  </button>
+  <button class="tab-btn" data-s="forn" onclick="goTo(this)">
+    <svg class="tab-icon" viewBox="0 0 26 26" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="1" y="4" width="16" height="13" rx="1.5"/><path d="M17 9h5l3 5.5V19h-8V9z"/><circle cx="6" cy="20" r="2.5"/><circle cx="20" cy="20" r="2.5"/></svg>
+    <span class="tab-lbl">Fornit.</span>
+  </button>
+</nav>
+
+<!-- ═══ MENU ═══ -->
+<div id="s-menu" class="screen on">
+  <div class="page-hd">
+    <div style="margin-bottom:10px">
+      <input id="ev-title-input"
+        style="width:100%;font-size:28px;font-weight:700;letter-spacing:-.5px;color:var(--tx);background:none;border:none;outline:none;font-family:inherit;padding:0"
+        placeholder="Nome evento…"
+        value=""
+        oninput="eventoTitolo=this.value;updCopDisplay();save()">
+    </div>
+    <div class="page-hd-row">
+      <div class="page-sub" id="menu-sub">Configura i coperti</div>
+      <button class="btn btn-sm btn-secondary" onclick="salvaEvento()">Salva evento</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="section">
+      <div class="section-title">Composizione tavola</div>
+      <div class="cop-wrap">
+        <div class="cop-fields">
+          <div class="cop-field">
+            <div class="cop-field-lbl">Adulti</div>
+            <input type="number" inputmode="numeric" pattern="[0-9]*" id="c-adulti" value="50" min="0" oninput="setCop('adulti',this.value)">
+          </div>
+          <div class="cop-field">
+            <div class="cop-field-lbl">Bambini</div>
+            <input type="number" inputmode="numeric" pattern="[0-9]*" id="c-bambini" value="0" min="0" oninput="setCop('bambini',this.value)">
+          </div>
+          <div class="cop-field">
+            <div class="cop-field-lbl">Cucina</div>
+            <input type="number" inputmode="numeric" pattern="[0-9]*" id="c-cucina" value="0" min="0" oninput="setCop('cucina',this.value)">
+          </div>
+        </div>
+        <div class="cop-total">
+          <span class="cop-total-lbl">Totale coperti</span>
+          <span class="cop-total-n" id="cop-tot">50</span>
+        </div>
+        <div id="cop-alt-row" style="display:none;padding:10px 16px;border-top:.5px solid var(--sep2);font-size:14px;color:var(--tx2)">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span>di cui menu alternativi</span>
+            <span style="font-family:var(--mono);font-weight:600;color:var(--orange)" id="cop-alt-n">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Menu alternativi</div>
+      <div class="list-group" id="alt-list"></div>
+      <div style="margin-top:10px;display:flex;align-items:center;justify-content:space-between">
+        <button class="btn-text" onclick="addAlt()">+ Aggiungi tipo</button>
+        <div id="alt-linked" style="font-size:13px;color:var(--tx3)"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">Portate</div>
+      <div id="portate-list" style="display:flex;flex-direction:column;gap:10px"></div>
+      <div style="margin-top:10px">
+        <button class="btn-text" onclick="openAddRic(null,false)">+ Nuova ricetta</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ OSPITI ═══ -->
+<div id="s-ospiti" class="screen">
+  <div class="page-hd">
+    <div class="page-hd-row">
+      <div class="page-title">Ospiti</div>
+      <button class="btn btn-sm btn-primary" onclick="openAddOspite()">Aggiungi</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="section">
+      <div id="allsum" class="allsum"></div>
+      <div class="list-group" id="ospiti-list"><div class="list-row" style="color:var(--tx3)">Nessun ospite aggiunto</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SPESA ═══ -->
+<div id="s-spesa" class="screen">
+  <div class="page-hd">
+    <div class="page-hd-row">
+      <div>
+        <div class="page-title">Spesa</div>
+        <div class="page-sub" id="spesa-sub"></div>
+      </div>
+      <div style="display:flex;gap:7px">
+        <button class="btn btn-sm btn-secondary" onclick="ricalcola();renderSpesa()">Ricalcola</button>
+        <button class="btn btn-sm btn-primary" onclick="scaricaPDF()">PDF</button>
+      </div>
+    </div>
+  </div>
+  <div class="content">
+    <div class="section">
+      <div id="pane-bar"></div>
+      <div class="chips" id="s-chips" style="margin-bottom:14px"></div>
+      <div id="s-body"></div>
+      <div style="margin-top:20px">
+        <div class="section-title">Articoli extra</div>
+        <div class="list-group">
+          <div id="ex-rows"></div>
+          <div class="list-row"><button class="btn-text" onclick="addExRow()">+ Aggiungi articolo</button></div>
+        </div>
+      </div>
+      <div class="total-card" style="margin-top:12px">
+        <div>
+          <div class="total-label">Totale stimato</div>
+          <div id="s-cpp" class="total-sub"></div>
+        </div>
+        <span class="total-n" id="s-tot">€ 0,00</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ COSTI ═══ -->
+<div id="s-costi" class="screen">
+  <div class="page-hd"><div class="page-title">Costi</div></div>
+  <div class="content">
+    <div class="section">
+      <div class="list-group">
+        <div style="display:flex;border-bottom:.5px solid var(--sep3)">
+          <button id="ctab-s" class="btn btn-primary btn-sm" data-t="s" onclick="ctab(this)" style="flex:1;border-radius:0;padding:12px">Per articolo</button>
+          <button id="ctab-t" class="btn btn-secondary btn-sm" data-t="t" onclick="ctab(this)" style="flex:1;border-radius:0;padding:12px;border-left:.5px solid var(--sep3)">Totale</button>
+        </div>
+        <div id="ct-s" style="padding:14px 16px"><div id="c-list"></div></div>
+        <div id="ct-t" style="padding:14px 16px;display:none">
+          <div class="form-field"><label class="form-label">Totale spesa (€)</label><input class="form-input" type="number" id="tot-inp" placeholder="285.00" min="0" step="0.01" oninput="updTotMan(this.value)"></div>
+          <div id="cpp-info" style="font-size:13px;color:var(--tx3)"></div>
+        </div>
+      </div>
+      <div class="total-card" style="margin-top:12px">
+        <div><div class="total-label">Totale effettivo</div><div id="c-cpp" class="total-sub"></div></div>
+        <span class="total-n" id="c-tot">€ 0,00</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ STORICO ═══ -->
+<div id="s-storico" class="screen">
+  <div class="page-hd"><div class="page-title">Archivio</div></div>
+  <div class="content">
+    <div class="section">
+      <div class="list-group" id="stor-body"><div class="list-row" style="color:var(--tx3)">Nessun evento salvato</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ FORNITORI ═══ -->
+<div id="s-forn" class="screen">
+  <div class="page-hd">
+    <div class="page-hd-row">
+      <div class="page-title">Fornitori</div>
+      <button class="btn btn-sm btn-primary" onclick="openAddForn()">Aggiungi</button>
+    </div>
+  </div>
+  <div class="content">
+    <div class="section">
+      <div class="list-group" id="forn-body"></div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div id="modal-overlay" class="modal-overlay" onclick="bgck(event)">
+  <div class="modal-sheet" id="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-hd">
+      <span class="modal-title" id="m-title">—</span>
+      <button class="modal-close" onclick="closeM()">Chiudi</button>
+    </div>
+    <div class="modal-body" id="m-body"></div>
+    <div class="modal-footer" id="m-footer"></div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════
+// CONFIG
+// ════════════════════════
+const PORTATE=[
+  {id:'antipasto',label:'Antipasti'},
+  {id:'primo',label:'Primi piatti'},
+  {id:'secondo',label:'Secondi piatti'},
+  {id:'contorno',label:'Contorni'},
+  {id:'dolce',label:'Dolce e frutta'}
+];
+const ALLERGIE=[
+  {id:'celiachia',label:'Celiachia / Glutine',cls:'a-cel'},
+  {id:'lattosio',label:'Lattosio',cls:'a-lat'},
+  {id:'fruttasecca',label:'Frutta secca',cls:'a-fru'},
+  {id:'vegano',label:'Vegano',cls:'a-veg'},
+  {id:'vegetariano',label:'Vegetariano',cls:'a-vgt'},
+  {id:'uova',label:'Uova',cls:'a-uov'},
+  {id:'pesce',label:'Pesce',cls:'a-pes'},
+  {id:'crostacei',label:'Crostacei',cls:'a-cro'},
+  {id:'soia',label:'Soia',cls:'a-soi'},
+  {id:'altro',label:'Altro',cls:'a-alt'}
+];
+const UNITS=['g','kg','ml','l','pz','fette','cucchiai','spicchi'];
+
+// ════════════════════════
+// STATE
+// ════════════════════════
+let det={adulti:50,bambini:0,cucina:0};
+let eventoTitolo='';
+let altRapido=[];
+let ricette=[],fornitori=[],ospiti=[],storico=[];
+let pane={on:false,note:''};
+let spesaItems=[],spesaExtra=[];
+let filtroF='tutti',ctabMode='s';
+let openP={};
+
+function initF(){
+  fornitori=[
+    {id:'f1',nome:'Supermercato',color:'#34C759'},
+    {id:'f2',nome:'Fornitore carne',color:'#FF3B30'},
+    {id:'f3',nome:'Beverage',color:'#007AFF'},
+    {id:'f4',nome:'Fresco / Ortofrutta',color:'#FF9500'}
+  ];
+}
+
+// ════════════════════════
+// PERSIST
+// ════════════════════════
+function save(){
+  try{localStorage.setItem('cucina_v2',JSON.stringify({det,altRapido,eventoTitolo,ricette,fornitori,spesaItems,spesaExtra,ospiti,storico,pane}));}catch(e){}
+}
+function load(){
+  try{
+    const d=JSON.parse(localStorage.getItem('cucina_v2')||'{}');
+    if(d.det)det=Object.assign({adulti:50,bambini:0,cucina:0},d.det);
+    if(d.altRapido)altRapido=d.altRapido;
+    if(d.eventoTitolo)eventoTitolo=d.eventoTitolo;
+    if(d.ricette)ricette=d.ricette;
+    if(d.fornitori&&d.fornitori.length)fornitori=d.fornitori;else initF();
+    if(d.spesaItems)spesaItems=d.spesaItems;
+    if(d.spesaExtra)spesaExtra=d.spesaExtra;
+    if(d.ospiti)ospiti=d.ospiti;
+    if(d.storico)storico=d.storico;
+    if(d.pane)pane=d.pane;
+  }catch(e){initF();}
+}
+
+// ════════════════════════
+// UTILS
+// ════════════════════════
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,5);}
+function eur(n){return '€ '+n.toFixed(2).replace('.',',');}
+function fQ(n,u){
+  if(n===null||n===undefined||isNaN(n))return '—';
+  if(u==='g'&&n>=1000)return (n/1000).toFixed(2)+' kg';
+  if(u==='ml'&&n>=1000)return (n/1000).toFixed(2)+' l';
+  return (n>=100?Math.round(n):n>=10?parseFloat(n.toFixed(1)):parseFloat(n.toFixed(2)))+' '+(u||'');
+}
+function totCop(){
+  const base=(det.adulti||0)+(det.bambini||0)+(det.cucina||0);
+  const alt=altRapido.reduce((a,x)=>a+(x.n||0),0);
+  return base+alt;
+}
+function totAlt(){return altRapido.reduce((a,x)=>a+(x.n||0),0);}
+function calcQ(ing){return ing.modo==='tot'?ing.qta:ing.qta*totCop();}
+function calcFin(s){
+  const base=s.modo==='tot'?s.qta:s.qta*totCop();
+  let ex=s.extraQta||0;const eu=s.extraUnit||s.unit;
+  if(s.unit==='g'&&eu==='kg')ex*=1000;else if(s.unit==='kg'&&eu==='g')ex/=1000;
+  else if(s.unit==='ml'&&eu==='l')ex*=1000;else if(s.unit==='l'&&eu==='ml')ex/=1000;
+  return base+ex;
+}
+function aInfo(id){return ALLERGIE.find(a=>a.id===id)||{label:id,cls:'a-alt'};}
+function fInfo(id){return fornitori.find(f=>f.id===id)||{nome:'—',color:'#8E8E93'};}
+function uOpts(s){return UNITS.map(u=>`<option value="${u}"${u===s?' selected':''}>${u}</option>`).join('');}
+function fOpts(s){return fornitori.map(f=>`<option value="${f.id}"${f.id===s?' selected':''}>${f.nome}</option>`).join('');}
+
+// ════════════════════════
+// NAVIGATION
+// ════════════════════════
+function goTo(el){
+  const s=el.dataset.s;
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('on',b.dataset.s===s));
+  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('on'));
+  document.getElementById('s-'+s).classList.add('on');
+  window.scrollTo({top:0,behavior:'instant'});
+  if(s==='spesa'){ricalcola();renderSpesa();}
+  if(s==='ospiti')renderOspiti();
+  if(s==='forn')renderFornitori();
+  if(s==='storico')renderStorico();
+  if(s==='costi')renderCList();
+}
+
+// ════════════════════════
+// COPERTI
+// ════════════════════════
+function setCop(k,v){
+  det[k]=Math.max(0,parseInt(v)||0);
+  updCopDisplay();
+  save();
+}
+function updCopDisplay(){
+  const n=totCop();
+  const altN=altRapido.reduce((a,x)=>a+(x.n||0),0);
+  const base=n-altN;
+  // aggiorna totale
+  const el=document.getElementById('cop-tot');
+  if(el)el.textContent=n;
+  // riga alternativi
+  const altRow=document.getElementById('cop-alt-row');
+  const altNEl=document.getElementById('cop-alt-n');
+  if(altRow)altRow.style.display=altN>0?'block':'none';
+  if(altNEl)altNEl.textContent=altN;
+  // sottotitolo
+  const ms=document.getElementById('menu-sub');
+  const tt=document.getElementById('ev-title-display');
+  const titolo=typeof eventoTitolo!=='undefined'?eventoTitolo:'';
+  if(ms)ms.textContent=(titolo?titolo+' — ':'')+`${n} coperti${altN?' (di cui '+altN+' alternativi)':''}`;
+}
+
+// ════════════════════════
+// ALT RAPIDO
+// ════════════════════════
+function renderAlt(){
+  const el=document.getElementById('alt-list');if(!el)return;
+  if(!altRapido.length){
+    el.innerHTML='<div class="list-row" style="color:var(--tx3)">Nessun menu alternativo aggiunto</div>';
+  } else {
+    el.innerHTML=altRapido.map((a,i)=>`
+      <div class="alt-item">
+        <input class="alt-n-input" type="number" inputmode="numeric" value="${a.n}" min="0" oninput="altRapido[${i}].n=parseInt(this.value)||0;save()">
+        <input class="alt-lbl-input" type="text" value="${a.label}" placeholder="es. Celiaci" oninput="altRapido[${i}].label=this.value;save()">
+        <button class="btn-text btn-text-red" onclick="altRapido.splice(${i},1);renderAlt();save()">Rimuovi</button>
+      </div>`).join('');
+  }
+  // ospiti collegati
+  const cnt={};ospiti.forEach(o=>o.allergie.forEach(a=>{cnt[a]=(cnt[a]||0)+1;}));
+  const li=document.getElementById('alt-linked');
+  if(li){
+    const e=Object.entries(cnt);
+    li.innerHTML=e.length?'Da ospiti: '+e.map(([id,n])=>{const i=aInfo(id);return `<span class="atag ${i.cls}" style="margin-right:3px">${i.label} ${n}</span>`;}).join(''):'';
+  }
+  updCopDisplay();
+}
+function addAlt(){altRapido.push({label:'Tipo',n:0});renderAlt();updCopDisplay();save();}
+
+// ════════════════════════
+// PORTATE
+// ════════════════════════
+function renderPortate(){
+  const c=totCop();
+  const ms=document.getElementById('menu-sub');
+  if(ms)ms.textContent=`${c} coperti${ricette.length?' — '+ricette.filter(r=>!r.isAlt).length+' ricette':''}`;
+  const el=document.getElementById('portate-list');
+  el.innerHTML=PORTATE.map(p=>{
+    const std=ricette.filter(r=>r.portata===p.id&&!r.isAlt);
+    const alt=ricette.filter(r=>r.portata===p.id&&r.isAlt);
+    const isO=openP[p.id];
+    return `<div class="portata-wrap">
+      <div class="portata-hd" onclick="togP('${p.id}')">
+        <span class="portata-name">${p.label}</span>
+        <div class="portata-chips">
+          ${std.length?`<span class="pchip pchip-g">${std.length}</span>`:''}
+          ${altRapido.filter(at=>alt.some(r=>r.altLabel===at.label)).map(at=>`<span class="pchip pchip-o">${at.label}</span>`).join('')}
+          ${!std.length&&!alt.length&&!altRapido.length?`<span class="info-badge ib-gray">vuoto</span>`:''}
+        </div>
+        <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="var(--tx3)" stroke-width="1.8" style="transform:rotate(${isO?180:0}deg);transition:transform .2s;flex-shrink:0"><polyline points="2 4 6.5 8.5 11 4"/></svg>
+      </div>
+      <div class="portata-body ${isO?'op':''}">
+        <div class="sec-label">Menu standard — tutti</div>
+        ${std.length===0?`<div class="empty-row">Nessuna ricetta standard</div>`:std.map(r=>ricHTML(r,c)).join('')}
+        <div class="portata-footer">
+          <button class="btn btn-sm btn-primary" onclick="openAddRic('${p.id}',false)">+ Aggiungi</button>
+        </div>
+        ${altRapido.length?altRapido.map(at=>{
+          const altRic=alt.filter(r=>r.altLabel===at.label);
+          return `<div style="border-top:.5px solid var(--sep2)">
+            <div class="sec-label alt" style="display:flex;align-items:center;justify-content:space-between">
+              <span>${at.label} <span style="background:rgba(255,149,0,.15);color:var(--orange);font-size:11px;padding:1px 7px;border-radius:100px;font-weight:700;margin-left:4px">${at.n}</span></span>
+            </div>
+            ${altRic.length===0?`<div class="empty-row">Nessuna ricetta per ${at.label}</div>`:altRic.map(r=>ricHTML(r,c,true)).join('')}
+            <div class="portata-footer">
+              <button class="btn btn-sm btn-am" onclick="openAddRic('${p.id}',true,'',at.label)">+ Ricetta per ${at.label}</button>
+            </div>
+          </div>`;
+        }).join(''):''}
+      </div>
+    </div>`;
+  }).join('')+paneHTML();
+}
+
+function ricHTML(r,c,isAlt){
+  const spTag=r.isAlt
+    ?(r.genSpesa?`<span class="info-badge ib-green">spesa</span>`:`<span class="info-badge ib-gray">promemoria</span>`)
+    :'';
+  return `<div class="ric-item" style="${isAlt?'background:rgba(255,149,0,.02)':''}">
+    <div class="ric-header">
+      <div class="ric-info">
+        <div class="ric-name">${r.nome} ${spTag}</div>
+        <div class="ric-meta">${r.note?r.note+' — ':''} ${r.ingredienti?.length||0} ingredienti · ${c} cop.</div>
+      </div>
+      <div class="ric-actions">
+        <button class="btn-text" style="font-size:14px" onclick="openAddRic(null,${!!isAlt},'${r.id}')">Modifica</button>
+        <button class="btn-text btn-text-red" style="font-size:14px" onclick="delRic('${r.id}')">Elimina</button>
+      </div>
+    </div>
+    ${r.ingredienti?.length?`
+      <div class="ing-mini">
+        ${r.ingredienti.map(i=>{const fi=fInfo(i.fornitoreId);return `<div class="ing-mini-row">
+          <span class="ing-mini-name">${i.nome}</span>
+          <span class="ing-mini-val">${fQ(calcQ(i),i.unit)}</span>
+          <span class="ing-mini-forn" style="color:${fi.color}">${fi.nome}</span>
+        </div>`;}).join('')}
+      </div>`:''
+    }
+  </div>`;
+}
+
+function paneHTML(){
+  const isO=openP['pane'];
+  return `<div class="portata-wrap" style="margin-top:0">
+    <div class="portata-hd" onclick="togP('pane')">
+      <span class="portata-name">Pane</span>
+      <span class="info-badge ${pane.on?'ib-green':'ib-gray'}">${pane.on?'Da comprare':'Non necessario'}</span>
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="var(--tx3)" stroke-width="1.8" style="transform:rotate(${isO?180:0}deg);transition:transform .2s;flex-shrink:0"><polyline points="2 4 6.5 8.5 11 4"/></svg>
+    </div>
+    <div class="portata-body ${isO?'op':''}">
+      <div class="pane-toggle-row">
+        <span style="font-size:16px;font-weight:500">${pane.on?'Da comprare (q.b.)':'Non necessario'}</span>
+        <button class="toggle ${pane.on?'on':'off'}" onclick="pane.on=!pane.on;save();renderPortate()"></button>
+      </div>
+      ${pane.on?`<div style="padding:0 16px 14px"><input class="form-input" style="font-size:15px;padding:11px 13px" placeholder="Tipo di pane, note…" value="${pane.note||''}" oninput="pane.note=this.value;save()"></div>`:''}
+    </div>
+  </div>`;
+}
+
+function togP(id){openP[id]=!openP[id];renderPortate();}
+function delRic(id){if(!confirm('Eliminare?'))return;ricette=ricette.filter(r=>r.id!==id);renderPortate();save();}
+
+// ════════════════════════
+// RICETTA MODAL — ingredienti verticali, mobile-first
+// ════════════════════════
+function openAddRic(presetP,presetAlt,editId,presetAltLabel){
+  const r=editId?ricette.find(x=>x.id===editId):null;
+  const isAlt=r?r.isAlt:!!presetAlt;
+  const genSpesa=r?(r.genSpesa!==undefined?r.genSpesa:true):true;
+  const _altLabel=r?r.altLabel:(presetAltLabel||'');
+  const pOpts=PORTATE.map(p=>`<option value="${p.id}"${(presetP||r?.portata)===p.id?' selected':''}>${p.label}</option>`).join('');
+  const ingCards=r?.ingredienti?.length?r.ingredienti.map((i,idx)=>ingCardHTML(idx,i)).join(''):ingCardHTML(0);
+  window._ic=r?.ingredienti?.length||1;
+
+  setModal(r?'Modifica ricetta':'Nuova ricetta',`
+    <div class="form-row2">
+      <div class="form-field"><label class="form-label">Nome</label><input class="form-input" id="r-nome" value="${r?r.nome:''}" placeholder="es. Risotto ai funghi" autocomplete="off"></div>
+      <div class="form-field"><label class="form-label">Portata</label><select class="form-input" id="r-portata">${pOpts}</select></div>
+    </div>
+    <div class="form-field"><label class="form-label">Note (opzionale)</label><input class="form-input" id="r-note" value="${r?r.note||'':''}" placeholder="es. senza glutine…"></div>
+    <label class="form-check" style="background:${isAlt?'rgba(255,149,0,.08)':'rgba(0,122,255,.06)'}">
+      <input type="checkbox" id="r-isalt" ${isAlt?'checked':''} onchange="toggleAltUI()">
+      <span class="form-check-label" style="color:${isAlt?'var(--orange)':'var(--blue)'}">Menu alternativo</span>
+    </label>
+    <div id="gen-wrap" style="display:${isAlt?'block':'none'};margin-bottom:14px">
+      ${altRapido.length?`<div class="form-field"><label class="form-label">Per quale tipo</label><select class="form-input" id="r-altlabel"><option value="">— tutti gli alternativi —</option>${altRapido.map(a=>`<option value="${a.label}"${_altLabel===a.label?' selected':''}>${a.label} (${a.n})</option>`).join('')}</select></div>`:''}
+      <label class="form-check">
+        <input type="checkbox" id="r-genspesa" ${genSpesa?'checked':''}>
+        <span class="form-check-label">Genera lista spesa</span>
+      </label>
+    </div>
+    <div class="divider"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div style="font-size:14px;font-weight:600;color:var(--tx2)">INGREDIENTI</div>
+      <div style="font-size:12px;color:var(--tx3)">Per persona moltiplicato × coperti. Fisso = invariabile.</div>
+    </div>
+    <div class="ing-builder" id="ing-builder">${ingCards}</div>
+    <button class="btn btn-secondary btn-full" style="margin-top:8px" type="button" onclick="addIngCard()">+ Aggiungi ingrediente</button>
+  `,`
+    <button class="btn btn-secondary" onclick="closeM()">Annulla</button>
+    <button class="btn btn-primary" onclick="salvaRic('${editId||''}')">Salva ricetta</button>
+  `);
+}
+
+function ingCardHTML(idx,ing){
+  const m=ing?.modo||'pp';
+  const fOp=fOpts(ing?.fornitoreId);
+  const uOp=uOpts(ing?.unit||'g');
+  return `<div class="ing-card" id="ic-${idx}">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <span class="ing-card-hd">Ingrediente ${idx+1}</span>
+      <button type="button" class="ing-del" onclick="rmIngCard(${idx})">×</button>
+    </div>
+    <input class="form-input" id="in-${idx}" placeholder="Nome ingrediente (es. Riso Carnaroli)" value="${ing?ing.nome:''}" autocomplete="off">
+    <div class="ing-row2">
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--tx3);margin-bottom:5px">MODALITÀ</div>
+        <select class="form-input" id="im-${idx}">
+          <option value="pp" ${m==='pp'?'selected':''}>Per persona</option>
+          <option value="tot" ${m==='tot'?'selected':''}>Qtà fissa totale</option>
+        </select>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--tx3);margin-bottom:5px">QUANTITÀ</div>
+        <input class="form-input" type="number" inputmode="decimal" id="iq-${idx}" value="${ing?ing.qta:''}" placeholder="${m==='pp'?'es. 80':'es. 500'}" style="text-align:right;font-family:var(--mono)">
+      </div>
+    </div>
+    <div class="ing-row2">
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--tx3);margin-bottom:5px">UNITÀ</div>
+        <select class="form-input" id="iu-${idx}">${uOp}</select>
+      </div>
+      <div>
+        <div style="font-size:12px;font-weight:600;color:var(--tx3);margin-bottom:5px">FORNITORE</div>
+        <select class="form-input" id="if-${idx}">${fOp}</select>
+      </div>
+    </div>
+  </div>`;
+}
+
+function addIngCard(){
+  const idx=window._ic++;
+  const div=document.createElement('div');
+  div.innerHTML=ingCardHTML(idx);
+  document.getElementById('ing-builder').appendChild(div.firstElementChild);
+  // scroll to new card
+  setTimeout(()=>{const el=document.getElementById('ic-'+idx);if(el)el.scrollIntoView({behavior:'smooth',block:'nearest'});},100);
+}
+function rmIngCard(idx){const el=document.getElementById('ic-'+idx);if(el)el.remove();}
+function toggleAltUI(){
+  const a=document.getElementById('r-isalt').checked;
+  const w=document.getElementById('gen-wrap');if(w)w.style.display=a?'block':'none';
+}
+
+function salvaRic(editId){
+  const nome=document.getElementById('r-nome').value.trim();
+  if(!nome){alert('Inserisci il nome della ricetta');return;}
+  const isAlt=document.getElementById('r-isalt').checked;
+  const genSpesa=isAlt?document.getElementById('r-genspesa').checked:true;
+  const ingredienti=[];
+  document.querySelectorAll('[id^="ic-"]').forEach(card=>{
+    const idx=card.id.split('-')[1];
+    const n=document.getElementById('in-'+idx)?.value.trim();
+    const q=parseFloat(document.getElementById('iq-'+idx)?.value);
+    const m=document.getElementById('im-'+idx)?.value||'pp';
+    const u=document.getElementById('iu-'+idx)?.value||'g';
+    const f=document.getElementById('if-'+idx)?.value||fornitori[0]?.id;
+    if(n&&!isNaN(q)&&q>=0)ingredienti.push({nome:n,modo:m,qta:q,unit:u,fornitoreId:f});
+  });
+  if(!ingredienti.length){alert('Aggiungi almeno un ingrediente');return;}
+  const altLabelEl=document.getElementById('r-altlabel');
+  const altLabel=altLabelEl?altLabelEl.value:'';
+  const ric={id:editId||uid(),nome,portata:document.getElementById('r-portata').value,isAlt,genSpesa,altLabel,note:document.getElementById('r-note').value.trim(),ingredienti};
+  if(editId){const i=ricette.findIndex(x=>x.id===editId);if(i>=0)ricette[i]=ric;}
+  else{ricette.push(ric);openP[ric.portata]=true;}
+  closeM();renderPortate();save();
+}
+
+// ════════════════════════
+// SPESA
+// ════════════════════════
+function ricalcola(){
+  const aggr={};
+  ricette.filter(r=>!r.isAlt||r.genSpesa).forEach(r=>{
+    r.ingredienti?.forEach(i=>{
+      const key=(i.nome+'|'+i.unit+'|'+i.modo).toLowerCase();
+      const fid=i.fornitoreId||fornitori[0]?.id;
+      if(aggr[key]&&i.modo==='pp')aggr[key].qta+=i.qta;
+      else if(!aggr[key])aggr[key]={id:'s'+uid(),nome:i.nome,modo:i.modo,qta:i.qta,unit:i.unit||'g',fornitoreId:fid,checked:false,prezzo:null,extraQta:0,extraUnit:i.unit||'g'};
+    });
+  });
+  const prev={};spesaItems.forEach(s=>prev[(s.nome+'|'+s.unit+'|'+s.modo).toLowerCase()]=s);
+  spesaItems=Object.values(aggr).map(s=>{
+    const p=prev[(s.nome+'|'+s.unit+'|'+s.modo).toLowerCase()];
+    return{...s,checked:p?p.checked:false,prezzo:p?p.prezzo:null,extraQta:p?p.extraQta:0,extraUnit:p?p.extraUnit:s.unit};
+  });
+  save();
+}
+
+function renderSpesa(){
+  const c=totCop();
+  const sub=document.getElementById('spesa-sub');if(sub)sub.textContent=`${c} coperti`;
+  const pb=document.getElementById('pane-bar');
+  if(pb)pb.innerHTML=pane.on?`<div class="pane-banner">Pane — da comprare q.b.${pane.note?' ('+pane.note+')':''}</div>`:'';
+  const ch=document.getElementById('s-chips');
+  if(ch)ch.innerHTML=`<button class="chip${filtroF==='tutti'?' on':''}" onclick="setF('tutti')">Tutti (${spesaItems.length})</button>`
+    +fornitori.map(f=>{const n=spesaItems.filter(s=>s.fornitoreId===f.id).length;
+      return n?`<button class="chip${filtroF===f.id?' on':''}" onclick="setF('${f.id}')">${f.nome} (${n})</button>`:''}).join('');
+  const filtered=filtroF==='tutti'?spesaItems:spesaItems.filter(s=>s.fornitoreId===filtroF);
+  const body=document.getElementById('s-body');
+  if(!filtered.length){body.innerHTML='<div class="empty">Nessun ingrediente.<br>Aggiungi ricette nel menu.</div>';renderExRows();updTotS();return;}
+  const grp={};fornitori.forEach(f=>grp[f.id]=[]);
+  filtered.forEach(s=>{if(!grp[s.fornitoreId])grp[s.fornitoreId]=[];grp[s.fornitoreId].push(s);});
+  let html='';
+  fornitori.forEach(f=>{
+    const items=grp[f.id];if(!items?.length)return;
+    html+=`<div class="forn-block">
+      <div class="forn-block-hd" style="color:${f.color}">${f.nome}</div>
+      ${items.map(s=>{
+        const base=s.modo==='tot'?s.qta:s.qta*c;
+        const fin=calcFin(s);
+        const hasEx=(s.extraQta||0)>0;
+        return `<div class="spesa-row">
+          <div class="s-check${s.checked?' on':''}" onclick="togChk('${s.id}',${!s.checked})"></div>
+          <div style="flex:1;min-width:0">
+            <div class="${s.checked?'s-name done':'s-name'}">${s.nome}</div>
+            <div style="font-size:13px;color:var(--tx3)">${fQ(base,s.unit)}${hasEx?' + extra':''}</div>
+          </div>
+          <div class="s-qty-col">
+            <span class="s-qty${hasEx?'':' base'}">${fQ(fin,s.unit)}</span>
+            <div class="s-extra">
+              <span style="font-size:11px;color:var(--tx3)">+</span>
+              <input type="number" min="0" step="0.1" value="${s.extraQta||''}" placeholder="0" oninput="updEx('${s.id}',this.value)">
+              <select onchange="updExU('${s.id}',this.value)">${uOpts(s.extraUnit||s.unit)}</select>
+            </div>
+          </div>
+          <div class="s-price"><input type="number" placeholder="€" min="0" step="0.01" value="${s.prezzo||''}" oninput="updPrz('${s.id}',this.value)"></div>
+        </div>`;}).join('')}
+    </div>`;
+  });
+  body.innerHTML=html;renderExRows();updTotS();
+}
+function setF(id){filtroF=id;renderSpesa();}
+function togChk(id,v){const s=spesaItems.find(x=>x.id===id);if(s){s.checked=v;save();renderSpesa();}}
+function updEx(id,v){const s=spesaItems.find(x=>x.id===id);if(s){s.extraQta=parseFloat(v)||0;save();}updTotS();}
+function updExU(id,v){const s=spesaItems.find(x=>x.id===id);if(s){s.extraUnit=v;save();}}
+function updPrz(id,v){const s=spesaItems.find(x=>x.id===id);if(s){s.prezzo=parseFloat(v)||null;save();}updTotS();}
+function updTotS(){
+  const t=spesaItems.reduce((a,s)=>a+(s.prezzo||0),0)+spesaExtra.reduce((a,e)=>a+(e.prezzo||0),0);
+  const el=document.getElementById('s-tot');if(el)el.textContent=eur(t);
+  const cpp=document.getElementById('s-cpp');const c=totCop();
+  if(cpp)cpp.textContent=t>0&&c>0?`${eur(t/c)} per coperto`:'';
+}
+
+// ════════════════════════
+// PDF DOWNLOAD
+// ════════════════════════
+function scaricaPDF(){
+  const {jsPDF}=window.jspdf;
+  if(!jsPDF){alert('Libreria PDF non caricata, riprova.');return;}
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  const W=210,margin=14,colW=W-margin*2;
+  let y=margin;
+  const c=totCop();
+
+  // header
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(18);
+  const titoloPDF = eventoTitolo || 'Lista della spesa';
+  doc.text(titoloPDF, margin, y);
+  y+=7;
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(10);
+  doc.setTextColor(100);
+  doc.text('Lista della spesa — '+c+' coperti — '+new Date().toLocaleDateString('it-IT'),margin,y);
+  y+=8;
+  doc.setTextColor(0);
+
+  // pane
+  if(pane.on){
+    doc.setFillColor(255,243,220);
+    doc.roundedRect(margin,y,colW,8,2,2,'F');
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(10);
+    doc.setTextColor(180,100,0);
+    doc.text('Pane — da comprare q.b.'+(pane.note?' ('+pane.note+')':''),margin+3,y+5.5);
+    doc.setTextColor(0);
+    y+=12;
+  }
+
+  // per ogni fornitore
+  const grp={};fornitori.forEach(f=>grp[f.id]=[]);
+  spesaItems.forEach(s=>{if(!grp[s.fornitoreId])grp[s.fornitoreId]=[];grp[s.fornitoreId].push(s);});
+  spesaExtra.forEach(e=>{if(!grp[e.fornitoreId])grp[e.fornitoreId]=[];grp[e.fornitoreId].push({...e,_extra:true});});
+
+  fornitori.forEach(f=>{
+    const items=grp[f.id];if(!items?.length)return;
+    if(y>270){doc.addPage();y=margin;}
+
+    // header fornitore
+    const [r,g,b]=hexToRgb(f.color);
+    doc.setFillColor(r,g,b,0.1);
+    doc.setFillColor(245,245,245);
+    doc.roundedRect(margin,y,colW,8,1.5,1.5,'F');
+    doc.setFont('helvetica','bold');
+    doc.setFontSize(9);
+    doc.setTextColor(r,g,b);
+    doc.text(f.nome.toUpperCase(),margin+3,y+5.5);
+    doc.setTextColor(0);
+    y+=11;
+
+    // righe
+    items.forEach(s=>{
+      if(y>275){doc.addPage();y=margin;}
+      const isEx=!!s._extra;
+      const qty=isEx?(s.qta?`${s.qta} ${s.unit}`:'—'):fQ(calcFin(s),s.unit);
+      const nome=s.nome||(s._extra?'Extra':'—');
+      // checkbox
+      doc.setDrawColor(180);
+      doc.rect(margin,y-3.5,4,4,'S');
+      // nome
+      doc.setFont('helvetica',s.checked?'normal':'normal');
+      doc.setFontSize(11);
+      doc.setTextColor(s.checked?150:0);
+      doc.text(nome,margin+6,y);
+      // qty
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(11);
+      doc.setTextColor(0,100,200);
+      const qW=doc.getTextWidth(qty);
+      doc.text(qty,margin+colW-qW,y);
+      doc.setTextColor(0);
+      // linea separatore
+      doc.setDrawColor(230);
+      doc.line(margin,y+2.5,margin+colW,y+2.5);
+      y+=8;
+    });
+    y+=4;
+  });
+
+  // totale
+  if(y>270){doc.addPage();y=margin;}
+  const totV=spesaItems.reduce((a,s)=>a+(s.prezzo||0),0)+spesaExtra.reduce((a,e)=>a+(e.prezzo||0),0);
+  if(totV>0){
+    doc.setFont('helvetica','bold');doc.setFontSize(11);
+    doc.text('Totale stimato:',margin,y);
+    doc.setTextColor(0,100,200);
+    doc.text(eur(totV),margin+colW-doc.getTextWidth(eur(totV)),y);
+    doc.setTextColor(0);
+  }
+
+  // Data URI — funziona su tutti i dispositivi incluso iOS Safari
+  const dataUri = doc.output('datauristring');
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  if(isIOS){
+    // Su iOS: apri in nuova tab, poi l'utente usa "Condividi" per salvare/mandare
+    const newTab = window.open();
+    if(newTab){
+      newTab.document.write('<html><head><title>Lista spesa</title></head><body style="margin:0"><iframe src="'+dataUri+'" style="width:100%;height:100vh;border:none"></iframe></body></html>');
+      newTab.document.close();
+    } else {
+      // fallback se popup bloccato
+      window.location.href = dataUri;
+    }
+  } else {
+    // Android / Desktop: download diretto
+    const a = document.createElement('a');
+    a.href = dataUri;
+    a.download = (eventoTitolo||'spesa')+'-cucina.pdf';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  }
+}
+
+function hexToRgb(hex){
+  const r=parseInt(hex.slice(1,3),16);
+  const g=parseInt(hex.slice(3,5),16);
+  const b=parseInt(hex.slice(5,7),16);
+  return [r,g,b];
+}
+
+// extra
+function renderExRows(){
+  const c=document.getElementById('ex-rows');if(!c)return;
+  if(!spesaExtra.length){c.innerHTML='<div class="list-row" style="color:var(--tx3)">Nessun articolo extra</div>';return;}
+  c.innerHTML=spesaExtra.map(e=>`
+    <div class="list-row" style="gap:8px;flex-wrap:wrap">
+      <input style="flex:1;min-width:100px;font-size:16px;border:none;background:none;color:var(--tx);outline:none;font-family:inherit" placeholder="Articolo…" value="${e.nome||''}" oninput="updEI('${e.id}','nome',this.value)">
+      <input type="number" inputmode="decimal" value="${e.qta||''}" style="width:60px;font-size:15px;text-align:right;border:.5px solid var(--sep);border-radius:7px;padding:6px 7px;background:var(--bg2);color:var(--tx);outline:none;-webkit-appearance:none;font-family:var(--mono)" oninput="updEI('${e.id}','qta',parseFloat(this.value)||0)">
+      <select style="font-size:14px;border:.5px solid var(--sep);border-radius:7px;padding:6px;background:var(--bg2);color:var(--tx);outline:none;-webkit-appearance:none" onchange="updEI('${e.id}','unit',this.value)">${uOpts(e.unit||'pz')}</select>
+      <select style="font-size:13px;border:.5px solid var(--sep);border-radius:7px;padding:6px;background:var(--bg2);color:var(--tx);outline:none;-webkit-appearance:none;max-width:110px" onchange="updEI('${e.id}','fornitoreId',this.value)">${fOpts(e.fornitoreId)}</select>
+      <button onclick="delEI('${e.id}')" style="background:none;border:none;color:var(--red);font-size:22px;cursor:pointer;padding:4px;line-height:1;flex-shrink:0">×</button>
+    </div>`).join('');
+}
+function addExRow(){spesaExtra.push({id:'x'+uid(),nome:'',qta:null,unit:'pz',fornitoreId:fornitori[0]?.id,prezzo:null});renderExRows();save();}
+function updEI(id,f,v){const e=spesaExtra.find(x=>x.id===id);if(e){e[f]=v;save();}}
+function delEI(id){spesaExtra=spesaExtra.filter(x=>x.id!==id);renderExRows();updTotS();save();}
+
+// ════════════════════════
+// COSTI
+// ════════════════════════
+function ctab(el){
+  ctabMode=el.dataset.t;
+  document.getElementById('ctab-s').className='btn btn-sm '+(ctabMode==='s'?'btn-primary':'btn-secondary');
+  document.getElementById('ctab-t').className='btn btn-sm '+(ctabMode==='t'?'btn-primary':'btn-secondary');
+  document.getElementById('ct-s').style.display=ctabMode==='s'?'block':'none';
+  document.getElementById('ct-t').style.display=ctabMode==='t'?'block':'none';
+  if(ctabMode==='s')renderCList();
+}
+function renderCList(){
+  const c=document.getElementById('c-list');if(!c)return;
+  const all=[...spesaItems,...spesaExtra];
+  if(!all.length){c.innerHTML='<div style="color:var(--tx3);text-align:center;padding:16px 0">Genera prima la lista spesa dal tab Spesa.</div>';return;}
+  c.innerHTML=all.map(s=>{
+    const isEx=!!spesaExtra.find(x=>x.id===s.id);
+    const qty=isEx?(s.qta?`${s.qta} ${s.unit}`:'—'):fQ(calcFin(s),s.unit);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:.5px solid var(--sep3)">
+      <span style="flex:1;font-size:16px;font-weight:500">${s.nome||'—'}${isEx?` <span class="info-badge ib-gray">extra</span>`:''}</span>
+      <span style="font-family:var(--mono);font-size:14px;color:var(--tx3)">${qty}</span>
+      <input type="number" placeholder="€" min="0" step="0.01" value="${s.prezzo||''}"
+        style="width:80px;padding:8px 10px;font-size:15px;border:.5px solid var(--sep);border-radius:8px;background:var(--bg2);color:var(--tx);text-align:right;outline:none;-webkit-appearance:none;font-family:var(--mono)"
+        oninput="${isEx?`updEI('${s.id}','prezzo',parseFloat(this.value)||null)`:`updPrz('${s.id}',this.value)`};updTotC()">
+    </div>`;}).join('');
+  updTotC();
+}
+function updTotC(){
+  const t=spesaItems.reduce((a,s)=>a+(s.prezzo||0),0)+spesaExtra.reduce((a,e)=>a+(e.prezzo||0),0);
+  const c=totCop();
+  const el=document.getElementById('c-tot');if(el)el.textContent=eur(t);
+  const cpp=document.getElementById('c-cpp');if(cpp)cpp.textContent=t>0&&c>0?`${eur(t/c)} per coperto`:'';
+}
+function updTotMan(v){
+  const val=parseFloat(v)||0;const c=totCop();
+  const el=document.getElementById('c-tot');if(el)el.textContent=eur(val);
+  const inf=document.getElementById('cpp-info');if(inf)inf.textContent=val>0?`${eur(val/c)} per coperto`:'';
+  const cpp=document.getElementById('c-cpp');if(cpp)cpp.textContent=val>0?`${eur(val/c)} per coperto`:'';
+}
+
+// ════════════════════════
+// OSPITI
+// ════════════════════════
+function renderOspiti(){
+  const sum=document.getElementById('allsum');
+  const cnt={};ospiti.forEach(o=>o.allergie.forEach(a=>{cnt[a]=(cnt[a]||0)+1;}));
+  sum.innerHTML=Object.entries(cnt).map(([id,n])=>{const i=aInfo(id);return `<div class="as-item"><span class="atag ${i.cls}">${i.label}</span><span class="as-n">${n}</span></div>`;}).join('');
+  const el=document.getElementById('ospiti-list');
+  if(!ospiti.length){el.innerHTML='<div class="list-row" style="color:var(--tx3)">Nessun ospite aggiunto</div>';return;}
+  el.innerHTML=ospiti.map(o=>`<div class="ospite-item">
+    <div class="ospite-row">
+      <div class="ospite-name">${o.nome}${o.tavolo?` <span style="font-size:13px;color:var(--tx3);font-weight:400">${o.tavolo}</span>`:''}</div>
+      <button class="btn-text" style="font-size:14px" onclick="openAddOspite('${o.id}')">Modifica</button>
+      <button class="btn-text btn-text-red" style="font-size:14px" onclick="delOspite('${o.id}')">Rimuovi</button>
+    </div>
+    ${o.allergie.length?`<div class="ospite-tags">${o.allergie.map(a=>{const i=aInfo(a);return `<span class="atag ${i.cls}">${i.label}</span>`;}).join('')}</div>`:''}
+    ${o.note?`<div style="padding:0 16px 12px;font-size:13px;color:var(--tx3);font-style:italic">${o.note}</div>`:''}
+  </div>`).join('');
+  renderAlt();
+}
+function openAddOspite(editId){
+  const o=editId?ospiti.find(x=>x.id===editId):null;
+  const checks=ALLERGIE.map(a=>`
+    <label style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:.5px solid var(--sep3);cursor:pointer">
+      <input type="checkbox" value="${a.id}" ${o&&o.allergie.includes(a.id)?'checked':''} style="width:22px;height:22px;accent-color:var(--blue);cursor:pointer;flex-shrink:0">
+      <span class="atag ${a.cls}" style="font-size:14px">${a.label}</span>
+    </label>`).join('');
+  setModal(o?'Modifica ospite':'Nuovo ospite',`
+    <div class="form-row2">
+      <div class="form-field"><label class="form-label">Nome</label><input class="form-input" id="o-n" value="${o?o.nome:''}" placeholder="es. Mario Rossi"></div>
+      <div class="form-field"><label class="form-label">Tavolo</label><input class="form-input" id="o-t" value="${o?o.tavolo||'':''}" placeholder="es. Tavolo 3"></div>
+    </div>
+    <div class="form-field">
+      <label class="form-label">Allergie e preferenze</label>
+      <div style="background:var(--bg2);border-radius:10px;overflow:hidden" id="a-chk">${checks}</div>
+    </div>
+    <div class="form-field"><label class="form-label">Note</label><input class="form-input" id="o-note" value="${o?o.note||'':''}" placeholder="es. menu bambino…"></div>
+  `,`<button class="btn btn-secondary" onclick="closeM()">Annulla</button><button class="btn btn-primary" onclick="salvaOspite('${editId||''}')">Salva</button>`);
+}
+function salvaOspite(editId){
+  const nome=document.getElementById('o-n').value.trim();if(!nome){alert('Inserisci il nome');return;}
+  const data={nome,tavolo:document.getElementById('o-t').value.trim(),allergie:[...document.querySelectorAll('#a-chk input[type=checkbox]:checked')].map(x=>x.value).filter(Boolean),note:document.getElementById('o-note').value.trim()};
+  if(editId){const i=ospiti.findIndex(x=>x.id===editId);if(i>=0)ospiti[i]={id:editId,...data};}
+  else ospiti.push({id:uid(),...data});
+  closeM();renderOspiti();save();
+}
+function delOspite(id){if(!confirm('Rimuovere?'))return;ospiti=ospiti.filter(o=>o.id!==id);renderOspiti();save();}
+
+// ════════════════════════
+// STORICO
+// ════════════════════════
+function salvaEvento(){
+  if(!ricette.length&&!pane.on){alert('Aggiungi almeno una ricetta.');return;}
+  setModal('Salva evento',`
+    <div class="form-field"><label class="form-label">Nome evento</label><input class="form-input" id="ev-n" placeholder="es. Cena di Primavera 2026"></div>
+    <div class="form-row2">
+      <div class="form-field"><label class="form-label">Data</label><input class="form-input" id="ev-d" type="date" value="${new Date().toISOString().slice(0,10)}"></div>
+      <div class="form-field"><label class="form-label">Coperti</label><input class="form-input" id="ev-c" type="number" value="${totCop()}" style="background:var(--bg2)" readonly></div>
+    </div>
+    <div class="form-field"><label class="form-label">Note (opzionale)</label><input class="form-input" id="ev-note" placeholder="note libere"></div>
+  `,`<button class="btn btn-secondary" onclick="closeM()">Annulla</button><button class="btn btn-primary" onclick="confSalvaEv()">Salva</button>`);
+}
+function confSalvaEv(){
+  const nome=document.getElementById('ev-n').value.trim();if(!nome){alert('Inserisci il nome');return;}
+  const totS=spesaItems.reduce((a,s)=>a+(s.prezzo||0),0)+spesaExtra.reduce((a,e)=>a+(e.prezzo||0),0);
+  storico.unshift({id:uid(),nome,data:document.getElementById('ev-d').value,coperti:totCop(),det:{...det},altRapido:JSON.parse(JSON.stringify(altRapido)),note:document.getElementById('ev-note').value.trim(),ricette:JSON.parse(JSON.stringify(ricette)),pane:{...pane},ospiti:JSON.parse(JSON.stringify(ospiti)),totSpesa:totS,titolo:eventoTitolo});
+  closeM();save();alert('Evento salvato!');
+}
+function renderStorico(){
+  const c=document.getElementById('stor-body');
+  if(!storico.length){c.innerHTML='<div class="list-row" style="color:var(--tx3)">Nessun evento salvato</div>';return;}
+  c.innerHTML=storico.map(ev=>`<div class="ev-item" onclick="viewEvento('${ev.id}')">
+    <span class="ev-date">${ev.data?new Date(ev.data).toLocaleDateString('it-IT'):'—'}</span>
+    <div class="ev-name">${ev.nome}${ev.note?`<div style="font-size:13px;color:var(--tx3)">${ev.note}</div>`:''}</div>
+    <div class="ev-badges">
+      <span class="badge badge-blue">${ev.coperti}</span>
+      ${ev.totSpesa?`<span class="badge badge-gray">${eur(ev.totSpesa)}</span>`:''}
+    </div>
+    <button onclick="event.stopPropagation();delEv('${ev.id}')" style="background:none;border:none;color:var(--red);font-size:22px;cursor:pointer;padding:6px;flex-shrink:0;line-height:1">×</button>
+  </div>`).join('');
+}
+function viewEvento(id){
+  const ev=storico.find(x=>x.id===id);if(!ev)return;
+  setModal(ev.nome,`
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <span class="badge badge-blue">${ev.data?new Date(ev.data).toLocaleDateString('it-IT'):'—'}</span>
+      <span class="badge badge-blue">${ev.coperti} coperti</span>
+      ${ev.totSpesa?`<span class="badge badge-gray">${eur(ev.totSpesa)}</span>`:''}
+      ${ev.totSpesa&&ev.coperti?`<span class="badge badge-gray">${eur(ev.totSpesa/ev.coperti)}/cop.</span>`:''}
+    </div>
+    <div style="font-size:13px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Menu</div>
+    <div style="font-size:16px;line-height:2">
+      ${PORTATE.map(p=>{const s=ev.ricette.filter(x=>x.portata===p.id&&!x.isAlt);const a=ev.ricette.filter(x=>x.portata===p.id&&x.isAlt);if(!s.length&&!a.length)return '';return `<b>${p.label}:</b> ${s.map(x=>x.nome).join(', ')}${a.length?` · <span style="color:var(--orange)">alt: ${a.map(x=>x.nome).join(', ')}</span>`:''}`}).filter(Boolean).join('<br>')}
+      ${ev.pane?.on?'<br><b>Pane:</b> da comprare':''}
+    </div>
+    ${ev.note?`<div style="font-size:14px;color:var(--tx3);font-style:italic;margin-top:12px">${ev.note}</div>`:''}
+  `,`<button class="btn btn-secondary" onclick="ricaricaEv('${ev.id}')">Ricarica menu</button><button class="btn btn-primary" onclick="closeM()">Chiudi</button>`);
+}
+function ricaricaEv(id){
+  const ev=storico.find(x=>x.id===id);if(!ev)return;
+  if(!confirm('Sovrascrive il menu corrente?'))return;
+  ricette=JSON.parse(JSON.stringify(ev.ricette));
+  if(ev.pane)pane={...ev.pane};
+  if(ev.det){det={...ev.det};['adulti','bambini','cucina'].forEach(k=>{const el=document.getElementById('c-'+k);if(el)el.value=det[k]||0;});}
+  if(ev.altRapido)altRapido=JSON.parse(JSON.stringify(ev.altRapido));
+  eventoTitolo=ev.titolo||ev.nome||'';
+  const eti=document.getElementById('ev-title-input');if(eti)eti.value=eventoTitolo;
+  closeM();
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('on',b.dataset.s==='menu'));
+  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('on'));
+  document.getElementById('s-menu').classList.add('on');
+  renderPortate();renderAlt();save();window.scrollTo(0,0);
+}
+function delEv(id){if(!confirm('Eliminare?'))return;storico=storico.filter(x=>x.id!==id);renderStorico();save();}
+
+// ════════════════════════
+// FORNITORI
+// ════════════════════════
+function renderFornitori(){
+  const c=document.getElementById('forn-body');
+  if(!fornitori.length){c.innerHTML='<div class="list-row" style="color:var(--tx3)">Nessun fornitore</div>';return;}
+  c.innerHTML=fornitori.map(f=>{
+    const n=spesaItems.filter(s=>s.fornitoreId===f.id).length+spesaExtra.filter(e=>e.fornitoreId===f.id).length;
+    return `<div class="list-row">
+      <div style="width:12px;height:12px;border-radius:50%;background:${f.color};flex-shrink:0"></div>
+      <span style="flex:1;font-size:16px;font-weight:500">${f.nome}</span>
+      <span style="font-size:14px;color:var(--tx3)">${n} articoli</span>
+      <button class="btn-text btn-text-red" onclick="delForn('${f.id}')">Elimina</button>
+    </div>`;}).join('');
+}
+function openAddForn(){
+  setModal('Nuovo fornitore',`
+    <div class="form-field"><label class="form-label">Nome fornitore</label><input class="form-input" id="fn-n" placeholder="es. Macelleria Rossi"></div>
+    <div class="form-field"><label class="form-label">Colore</label><input id="fn-c" type="color" value="#007AFF" style="width:60px;height:48px;padding:4px;cursor:pointer;border:none;border-radius:10px;background:none"></div>
+  `,`<button class="btn btn-secondary" onclick="closeM()">Annulla</button><button class="btn btn-primary" onclick="salveForn()">Salva</button>`);
+}
+function salveForn(){
+  const n=document.getElementById('fn-n').value.trim();if(!n)return;
+  fornitori.push({id:'f'+uid(),nome:n,color:document.getElementById('fn-c').value});
+  closeM();renderFornitori();save();
+}
+function delForn(id){if(!confirm('Eliminare?'))return;fornitori=fornitori.filter(f=>f.id!==id);renderFornitori();save();}
+
+// ════════════════════════
+// MODAL
+// ════════════════════════
+function setModal(title,body,footer){
+  document.getElementById('m-title').textContent=title;
+  document.getElementById('m-body').innerHTML=body;
+  document.getElementById('m-footer').innerHTML=footer||'';
+  document.getElementById('modal-overlay').classList.add('on');
+  document.body.style.overflow='hidden';
+}
+function closeM(){
+  document.getElementById('modal-overlay').classList.remove('on');
+  document.body.style.overflow='';
+  window._ic=0;
+}
+function bgck(e){if(e.target===document.getElementById('modal-overlay'))closeM();}
+
+// ════════════════════════
+// INIT
+// ════════════════════════
+load();
+['adulti','bambini','cucina'].forEach(k=>{
+  const el=document.getElementById('c-'+k);
+  if(el)el.value=det[k]||0;
+});
+// ripristina titolo
+const etiInit=document.getElementById('ev-title-input');
+if(etiInit)etiInit.value=eventoTitolo||'';
+updCopDisplay();
+renderPortate();
+renderAlt();
+</script>
+</body>
+</html>
